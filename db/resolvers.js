@@ -41,24 +41,111 @@ const resolvers = {
         console.log(error);
       }
     },
-    getClientsBySalesman: async (_,{},ctx) => {
+    getClientsBySalesman: async (_, {}, ctx) => {
       try {
-        const clients = await Client.find({salesman: ctx.user.id.toString()})
+        const clients = await Client.find({ salesman: ctx.user.id.toString() });
         return clients;
-      }catch (error) {
+      } catch (error) {
         console.log(error);
       }
     },
-    getClientById: async (_,{id}, ctx) => {
+    getClientById: async (_, { id }, ctx) => {
       const client = await Client.findById(id);
-      if(!client){
-        throw Error("Client does not exist")
-      }else if(client.salesman.toString() !== ctx.user.id){
-        throw Error("Salesman does not have access to this client")
+      if (!client) {
+        throw Error("Client does not exist");
+      } else if (client.salesman.toString() !== ctx.user.id) {
+        throw Error("Salesman does not have access to this client");
       }
 
-      return client
-      
+      return client;
+    },
+    getOrders: async () => {
+      try {
+        const orders = await Order.find({});
+        return orders;
+      } catch (error) {
+        console.log(error);
+      }
+    },
+    getOrdersBySalesman: async (_, {}, ctx) => {
+      try {
+        const orders = await Order.find({ salesman: ctx.user.id.toString() });
+        return orders;
+      } catch (error) {
+        console.log(error);
+      }
+    },
+    getOrderById: async (_, { id }, ctx) => {
+      const order = await Order.findById(id);
+      if (!order) {
+        throw Error("Order does not exist");
+      } else if (order.salesman.toString() !== ctx.user.id) {
+        throw Error("Salesman does not have access to this order");
+      }
+      return order;
+    },
+    getOrdersByState: async (_, { state }, ctx) => {
+      const orders = await Order.find({
+        salesman: ctx.user.id.toString(),
+        state,
+      });
+      return orders;
+    },
+    getTopClients: async () => {
+      const clients = await Order.aggregate([
+        { $match: { state: "completed" } },
+        {
+          $group: {
+            _id: "$client",
+            total: { $sum: "$total" },
+          },
+        },
+        {
+          $lookup: {
+            from: "clients",
+            localField: "_id",
+            foreignField: "_id",
+            as: "client",
+          },
+        },
+        {
+          $limit:3,
+        },
+        {
+          $sort: { total: -1 },
+        },
+      ]);
+      return clients;
+    },
+    getTopSalesmen: async () => {
+      const salesmen = await Order.aggregate([
+        { $match: { state: "completed" } },
+        {
+          $group: {
+            _id: "$salesman",
+            total: { $sum: "$total" },
+          },
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "_id",
+            foreignField: "_id",
+            as: "salesman",
+          },
+        },
+        {
+          $limit: 3,
+        },
+        {
+          $sort: { total: -1 },
+        },
+      ]);
+      return salesmen;
+    },
+    searchProductByName: async (_,{text})=>{
+      const product = await  Product.find({$text: {$search: text}})
+      return product
     }
   },
   Mutation: {
@@ -128,30 +215,29 @@ const resolvers = {
         { new: true }
       );
 
-      return updateProduct
+      return updateProduct;
     },
 
-    deleteProductById: async (_,{id}) => {
+    deleteProductById: async (_, { id }) => {
       const product = await Product.findById(id);
       if (!product) {
         throw new Error("Product does not exists");
       }
 
-      await Product.findOneAndDelete({_id:id});
-      return "Product remove succesfully"
-      
+      await Product.findOneAndDelete({ _id: id });
+      return "Product remove succesfully";
     },
 
-    newClient: async (_, {input},ctx) => {
-      const {email} = input
-      const client = await Client.findOne({email})
+    newClient: async (_, { input }, ctx) => {
+      const { email } = input;
+      const client = await Client.findOne({ email });
 
-      if(client){
-        throw Error("Client already exist")
+      if (client) {
+        throw Error("Client already exist");
       }
 
       const newClient = new Client(input);
-      newClient.salesman =  ctx.user.id
+      newClient.salesman = ctx.user.id;
 
       try {
         const res = await newClient.save();
@@ -159,63 +245,60 @@ const resolvers = {
       } catch (error) {
         console.log(error);
       }
-
-
     },
     updateClientById: async (_, { id, input }, ctx) => {
       const client = await Client.findById(id);
       if (!client) {
         throw new Error("Client does not exists");
-      }else if(client.salesman.toString() !== ctx.user.id){
-        throw Error("Salesman does not have access to this client")
+      } else if (client.salesman.toString() !== ctx.user.id) {
+        throw Error("Salesman does not have access to this client");
       }
 
-      const updateClient = await Client.findByIdAndUpdate(
-        id,
-        input,
-        { new: true }
-      );
+      const updateClient = await Client.findByIdAndUpdate(id, input, {
+        new: true,
+      });
 
-      return updateClient
+      return updateClient;
     },
 
-    deleteClientById: async (_,{id},ctx) => {
+    deleteClientById: async (_, { id }, ctx) => {
       const client = await Client.findById(id);
       if (!client) {
         throw new Error("Client does not exists");
-      }else if(client.salesman.toString() !== ctx.user.id){
-        throw Error("Salesman does not have access to this client")
+      } else if (client.salesman.toString() !== ctx.user.id) {
+        throw Error("Salesman does not have access to this client");
       }
 
-      await Client.findOneAndDelete({_id:id});
-      return "Client removed succesfully"
-      
+      await Client.findOneAndDelete({ _id: id });
+      return "Client removed succesfully";
     },
 
-    newOrder: async (_,{input},ctx) => {
-      const {client} = input
+    newOrder: async (_, { input }, ctx) => {
+      const { client } = input;
       //verify if client exist and belongs to the salesman
       const client_ = await Client.findById(client);
-      if(!client_){
-        throw Error("Client does not exist")
-      }else if(client_.salesman.toString() !== ctx.user.id){
-        throw Error("Salesman does not have access to this client")
+      if (!client_) {
+        throw Error("Client does not exist");
+      } else if (client_.salesman.toString() !== ctx.user.id) {
+        throw Error("Salesman does not have access to this client");
       }
 
       //verify if products exist and the quantity is aviable
 
-      for await (const order of input.order){
-        const {id} = order
+      for await (const order of input.order) {
+        const { id } = order;
         const product = await Product.findById(id);
 
-        if(!product){
-          throw new Error('Product does not exist');
-        }else if( product.exist < order.quantity){
-          throw new Error(`the product ${product.name} exceds the aviable quantity`)
-        }else{
-          product.exist = product.exist - order.quantity
+        if (!product) {
+          throw new Error("Product does not exist");
+        } else if (product.exist < order.quantity) {
+          throw new Error(
+            `the product ${product.name} exceds the aviable quantity`
+          );
+        } else {
+          product.exist = product.exist - order.quantity;
 
-          await product.save()
+          await product.save();
         }
       }
 
@@ -230,10 +313,54 @@ const resolvers = {
       } catch (error) {
         console.log(error);
       }
-      
-    }
+    },
+    updateOrderById: async (_, { id, input }, ctx) => {
+      const { client } = input;
+      const order = await Order.findById(id);
 
+      if (!order) {
+        throw new Error("Order does not exists");
+      } else if (order.salesman.toString() !== ctx.user.id) {
+        throw Error("Salesman does not have access to this order");
+      }
 
+      if (input.order) {
+        for await (const order of input.order) {
+          const { id } = order;
+          const product = await Product.findById(id);
+
+          if (!product) {
+            throw new Error("Product does not exist");
+          } else if (product.exist < order.quantity) {
+            throw new Error(
+              `the product ${product.name} exceds the aviable quantity`
+            );
+          } else {
+            product.exist = product.exist - order.quantity;
+
+            await product.save();
+          }
+        }
+      }
+
+      const updateOrder = await Order.findByIdAndUpdate(id, input, {
+        new: true,
+      });
+
+      return updateOrder;
+    },
+    deleteOrderById: async (_, { id }, ctx) => {
+      const order = await Order.findById(id);
+
+      if (!order) {
+        throw new Error("Order does not exists");
+      } else if (order.salesman.toString() !== ctx.user.id) {
+        throw Error("Salesman does not have access to this order");
+      }
+
+      await Order.findOneAndDelete({ _id: id });
+      return "Order removed succesfully";
+    },
   },
 };
 
