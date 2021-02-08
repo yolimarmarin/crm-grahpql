@@ -4,6 +4,7 @@ const resolvers = require("./db/resolvers");
 const connectDB = require("./config/db");
 const jwt = require("jsonwebtoken");
 require("dotenv").config({ path: "variables.env" });
+const express = require("express")
 
 connectDB();
 
@@ -27,6 +28,19 @@ const server = new ApolloServer({
   cors: {origin: '*', credentials: true},
 });
 
-server
+const app = express()
+
+app.use(cors({
+	origin: true,
+	credentials: true,
+}));
+
+server.applyMiddleware({
+	app,
+	path: '/',
+	cors: false,
+});
+
+app
   .listen({ port: process.env.PORT || 4000 })
   .then(({ url }) => console.log(`listening in ${url}`));
