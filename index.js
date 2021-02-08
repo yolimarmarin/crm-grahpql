@@ -5,6 +5,7 @@ const connectDB = require("./config/db");
 const jwt = require("jsonwebtoken");
 require("dotenv").config({ path: "variables.env" });
 const express = require("express")
+const cors = require('cors');
 
 connectDB();
 
