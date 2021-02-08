@@ -36,7 +36,7 @@ const typeDefs = gql`
         id: ID
         order:  [OrderGroup]
         total: Float
-        client: ID
+        client: Client
         salesman: ID
         state: OrderState
         created: String
@@ -45,6 +45,8 @@ const typeDefs = gql`
     type OrderGroup {
         id: ID
         quantity: Int
+        name: String
+        price: Float
     }
 
     type TopClient {
@@ -87,11 +89,13 @@ const typeDefs = gql`
     input ProductOrderInput {
         id: ID
         quantity: Int
+        name: String
+        price: Float
     }
 
     input OrderInput {
         order:  [ProductOrderInput]
-        total: Float!
+        total: Float
         client: ID!
         state: OrderState
     }
