@@ -1,2 +1,5 @@
 node_modules
 node_modules
+
+variables.env
+.DS_Store
