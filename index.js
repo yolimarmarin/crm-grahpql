@@ -7,8 +7,6 @@ require("dotenv").config({ path: "variables.env" });
 
 connectDB();
 
-//Server
-
 const server = new ApolloServer({ typeDefs, resolvers, context : ({req}) => {
     const token = req.headers['authorization'] || '';
     if(token){
