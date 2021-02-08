@@ -24,7 +24,7 @@ const server = new ApolloServer({
       }
     }
   },
-  cors: {origin: '*'},
+  cors: {origin: '*', credentials: true},
 });
 
 server
