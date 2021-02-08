@@ -19,6 +19,6 @@ const server = new ApolloServer({ typeDefs, resolvers, context : ({req}) => {
             console.log(error)
         }
     }
-} });
+} }); 
 
 server.listen({ port: process.env.PORT || 4000}).then(({ url }) => console.log(`listening in ${url}`));
