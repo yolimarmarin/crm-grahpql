@@ -31,8 +31,8 @@ const server = new ApolloServer({
 });
 
 const app = express();
-app.use(cors({ origin: ["*", "http://localhost:3000"] }));
+app.use(cors({ origin: "*" }));
 
-server.applyMiddleware({ app, path: "/" });
+server.applyMiddleware({ app, path: "/", cors: false, });
 
 app.listen({ port: process.env.PORT || 4000 });
