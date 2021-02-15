@@ -3,9 +3,9 @@ const resolvers = require("./db/resolvers");
 const connectDB = require("./config/db");
 const jwt = require("jsonwebtoken");
 require("dotenv").config({ path: "variables.env" });
-const express = require('express');
-const { ApolloServer } = require('apollo-server-express');
-const cors = require('cors');
+const express = require("express");
+const { ApolloServer } = require("apollo-server-express");
+const cors = require("cors");
 
 connectDB();
 
@@ -27,15 +27,12 @@ const server = new ApolloServer({
     }
   },
   introspection: true,
-  playground: true
+  playground: true,
 });
 
 const app = express();
-app.use(cors({ origin: '*', credentials: true }));
+app.use(cors({ origin: ["*", "http://localhost:3000"] }));
 
-server.applyMiddleware({ app, path:'/' });
+server.applyMiddleware({ app, path: "/" });
 
-app.listen({ port: process.env.PORT || 4000 })
-
-
-  
+app.listen({ port: process.env.PORT || 4000 });
