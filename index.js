@@ -1,13 +1,13 @@
-const { ApolloServer } = require("apollo-server");
 const typeDefs = require("./db/schema");
 const resolvers = require("./db/resolvers");
 const connectDB = require("./config/db");
 const jwt = require("jsonwebtoken");
 require("dotenv").config({ path: "variables.env" });
+const express = require('express');
+const { ApolloServer } = require('apollo-server-express');
+const cors = require('cors');
 
 connectDB();
-
-//Server
 
 const server = new ApolloServer({
   typeDefs,
@@ -26,9 +26,14 @@ const server = new ApolloServer({
       }
     }
   },
-  cors: { origin: "http://localhost:3000", credentials: true },
 });
 
-server
-  .listen({ port: process.env.PORT || 4000 })
-  .then(({ url }) => console.log(`listening in ${url}`));
+const app = express();
+app.use(cors({ origin: '*' }));
+
+server.applyMiddleware({ app, path:'/' });
+
+app.listen({ port: process.env.PORT || 4000 })
+
+
+  
